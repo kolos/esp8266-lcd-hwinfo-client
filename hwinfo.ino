@@ -64,15 +64,6 @@ typedef struct{
   double value;
 } _hw_sensor;
 
-/*
-static    long polling_time;
-static    uint reading_offset;
-static    uint reading_size;
-static    uint reading_num;
-*/
-
-static    long polling_time2;
-
 static   _long polling_time;
 static   _uint offset_of_readings;
 static   _uint size_of_reading;
@@ -86,10 +77,7 @@ static bool magic_received = false;
 
 static _hw_sensor reading;
 
-
-
 static void parse(void *data, size_t len) {
-
   if(!magic_received) return;
 
   for(uint16_t i=0;i<len;i++) {
@@ -181,14 +169,10 @@ static void handleData(void* arg, AsyncClient* client, void *data, size_t len) {
     requestPacket(client);
     os_timer_arm(&intervalTimer, 2000, true); // schedule for reply to server at next 2s
   }else if(memcmp(magic, data, sizeof magic) == 0) {
-    received_num++; magic_received = true;
-    //Serial.print("magic received: ");
-    //Serial.println(received_num);
+    magic_received = true;
     idx=0;
 
     parse(data, len);
-
-    //if(received_num > 6) client->close();
   } else {
     parse(data, len);
   }
@@ -208,9 +192,32 @@ void onDisconnect(void* arg, AsyncClient* client) {
 
 void onReadComplete() {
 
-  if(reading.group == 3 && reading.id == 83886087) {
-    Serial.print("SYS power: ");
-    Serial.println(reading.value);
+  if(reading.group == 3 && reading.id == 83886087) { /* CPU+SoC Power (SVI2 TFN) (W) */
+    lcd.setCursor(12, 0);
+    lcd.printf("%3d", (int)reading.value);
+    lcd.print("W");
+  } else if(reading.group == 3 && reading.id == 16777216) { /* CPU (Tctl/Tdie) (C) */
+    lcd.setCursor(13, 1);
+    lcd.printf("%2d", (int)reading.value);
+    lcd.print("C");
+  } else if(reading.group == 10 && reading.id == 117440513) { /* GPU D3D Usage (%) */
+    lcd.setCursor(0, 1);
+    lcd.print("G");
+    lcd.printf("%3d", (int)reading.value);
+    lcd.print("%");
+  } else if(reading.group == 1 && reading.id == 117440521) { /* Total CPU Usage (%) */
+    lcd.setCursor(0, 0);
+    lcd.print("C");
+    lcd.printf("%3d", (int)reading.value);
+    lcd.print("%");
+  } else if(reading.group == 0 && reading.id == 134217731) { /* Physical Memory Used (MB) */
+    lcd.setCursor(6, 0);
+    lcd.printf("%4d", (int)reading.value);
+    lcd.print("M");
+  } else if(reading.group == 10 && reading.id == 134217730) { /* GPU D3D Memory Dynamic (MB) */
+    lcd.setCursor(6, 1);
+    lcd.printf("%4d", (int)reading.value);
+    lcd.print("M");
   }
 }
 
