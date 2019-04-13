@@ -1,5 +1,9 @@
+# ESP8266 LCD HWiNFO Client
 
-# Displaytech 162B pins:
+## Screenshot
+![picture](picture.png "Picture")
+
+## Displaytech 162B pins:
 PIN	| FUN
    -|:-
 1	| A = 5V + 10 ohm
