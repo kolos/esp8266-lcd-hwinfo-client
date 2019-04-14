@@ -166,7 +166,7 @@ static void requestPacket(void* arg) {
 static void handleData(void* arg, AsyncClient* client, void *data, size_t len) {
   if(memcmp(hello_magic, data, sizeof hello_magic) == 0) {
     Serial.println("hello received, sending request");
-    requestPacket(client);
+    lcd.clear();
     os_timer_arm(&intervalTimer, 2000, true); // schedule for reply to server at next 2s
   }else if(memcmp(magic, data, sizeof magic) == 0) {
     magic_received = true;
@@ -181,13 +181,20 @@ static void handleData(void* arg, AsyncClient* client, void *data, size_t len) {
 void onConnect(void* arg, AsyncClient* client) {
   Serial.printf("\n client has been connected to %s on port %d \n", SERVER_HOST_NAME, TCP_PORT);
 
+  magic_received = false;
   client->add(hello, sizeof hello);
   client->send();
-
-  os_timer_arm(&intervalTimer, 10000, true);
 }
 void onDisconnect(void* arg, AsyncClient* client) {
   Serial.println("disconnected");
+
+  os_timer_disarm(&intervalTimer);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("hwinfo disconn.");
+
+  client->connect(SERVER_HOST_NAME, TCP_PORT);
 }
 
 void onReadComplete() {
@@ -225,9 +232,9 @@ void setupAsyncHWinfoClient() {
   AsyncClient* client = new AsyncClient;
   client->onData(&handleData, client);
   client->onConnect(&onConnect, client);
-  client->connect(SERVER_HOST_NAME, TCP_PORT);
   client->onDisconnect(&onDisconnect, client);
-
+  client->connect(SERVER_HOST_NAME, TCP_PORT);
+  
   os_timer_disarm(&intervalTimer);
   os_timer_setfn(&intervalTimer, &requestPacket, client);
 }
